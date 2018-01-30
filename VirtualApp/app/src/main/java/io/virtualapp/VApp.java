@@ -15,6 +15,7 @@ import io.virtualapp.delegate.MyTaskDescriptionDelegate;
 import jonathanfinerty.once.Once;
 
 /**
+ * ps:fork这个项目的主要目的是为了学习和注释
  * @author Lody
  */
 public class VApp extends MultiDexApplication {
