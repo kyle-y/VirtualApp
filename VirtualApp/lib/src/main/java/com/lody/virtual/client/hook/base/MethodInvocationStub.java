@@ -29,9 +29,9 @@ public class MethodInvocationStub<T> {
 
     private static final String TAG = MethodInvocationStub.class.getSimpleName();
 
-    private Map<String, MethodProxy> mInternalMethodProxies = new HashMap<>();
-    private T mBaseInterface;
-    private T mProxyInterface;
+    private Map<String, MethodProxy> mInternalMethodProxies = new HashMap<>();//所有的代理方法集合
+    private T mBaseInterface;//真正的远程服务
+    private T mProxyInterface;//远程服务的本地代理
     private String mIdentityName;
     private LogInvocation.Condition mInvocationLoggingCondition = LogInvocation.Condition.NEVER;
 
@@ -45,8 +45,9 @@ public class MethodInvocationStub<T> {
         this.mBaseInterface = baseInterface;
         if (baseInterface != null) {
             if (proxyInterfaces == null) {
-                proxyInterfaces = MethodParameterUtils.getAllInterface(baseInterface.getClass());
+                proxyInterfaces = MethodParameterUtils.getAllInterface(baseInterface.getClass());//获得该类的所有接口
             }
+            //创建该远程类的本地代理
             mProxyInterface = (T) Proxy.newProxyInstance(baseInterface.getClass().getClassLoader(), proxyInterfaces, new HookInvocationHandler());
         } else {
             VLog.d(TAG, "Unable to build HookDelegate: %s.", getIdentityName());
@@ -90,7 +91,7 @@ public class MethodInvocationStub<T> {
      *
      * @param methodProxy proxy
      */
-    public MethodProxy addMethodProxy(MethodProxy methodProxy) {
+    public MethodProxy addMethodProxy(MethodProxy methodProxy) {    //将hook后方法映射好保存起来，便于调用
         if (methodProxy != null && !TextUtils.isEmpty(methodProxy.getMethodName())) {
             if (mInternalMethodProxies.containsKey(methodProxy.getMethodName())) {
                 VLog.w(TAG, "The Hook(%s, %s) you added has been in existence.", methodProxy.getMethodName(),
@@ -166,7 +167,7 @@ public class MethodInvocationStub<T> {
     private class HookInvocationHandler implements InvocationHandler {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            MethodProxy methodProxy = getMethodProxy(method.getName());
+            MethodProxy methodProxy = getMethodProxy(method.getName()); //根据name的不同，执行不同的代理方法（这些方法都是hook过的），达到hook的目的；
             boolean useProxy = (methodProxy != null && methodProxy.isEnable());
             boolean mightLog = (mInvocationLoggingCondition != LogInvocation.Condition.NEVER) ||
                     (methodProxy != null && methodProxy.getInvocationLoggingCondition() != LogInvocation.Condition.NEVER);
@@ -182,6 +183,7 @@ public class MethodInvocationStub<T> {
 
 
             try {
+                //这里也可以在方法执行前后做一些额外操作
                 if (useProxy && methodProxy.beforeCall(mBaseInterface, method, args)) {
                     res = methodProxy.call(mBaseInterface, method, args);
                     res = methodProxy.afterCall(mBaseInterface, method, args, res);

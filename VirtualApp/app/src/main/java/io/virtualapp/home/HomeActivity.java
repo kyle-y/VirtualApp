@@ -17,6 +17,7 @@ import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.View;
@@ -163,19 +164,24 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     }
 
     private void initLaunchpad() {
-        mLauncherView.setHasFixedSize(true);
+        mLauncherView.setHasFixedSize(true);//避免重绘所有，提高性能
+
         StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(3, OrientationHelper.VERTICAL);
         mLauncherView.setLayoutManager(layoutManager);
+
         mLaunchpadAdapter = new LaunchpadAdapter(this);
-        SmartRecyclerAdapter wrap = new SmartRecyclerAdapter(mLaunchpadAdapter);
-        View footer = new View(this);
+        SmartRecyclerAdapter wrap = new SmartRecyclerAdapter(mLaunchpadAdapter);//装饰header和footer
+
+        View footer = new View(this); //加个空底部，用来适应底部浮窗
         footer.setLayoutParams(new StaggeredGridLayoutManager.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, VUiKit.dpToPx(this, 60)));
         wrap.setFooterView(footer);
         mLauncherView.setAdapter(wrap);
-        mLauncherView.addItemDecoration(new ItemOffsetDecoration(this, R.dimen.desktop_divider));
+
+        mLauncherView.addItemDecoration(new ItemOffsetDecoration(this, R.dimen.desktop_divider));//处理拖拽
         ItemTouchHelper touchHelper = new ItemTouchHelper(new LauncherTouchCallback());
         touchHelper.attachToRecyclerView(mLauncherView);
-        mLaunchpadAdapter.setAppClickListener((pos, data) -> {
+
+        mLaunchpadAdapter.setAppClickListener((pos, data) -> {  //处理点击
             if (!data.isLoading()) {
                 if (data instanceof AddAppButton) {
                     onAddAppButtonClick();
@@ -340,20 +346,23 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         }
     }
 
+    /**
+     * 如果需要对recyclerView进行拖拽和滑动，需要覆写该回调
+     */
     private class LauncherTouchCallback extends ItemTouchHelper.SimpleCallback {
 
-        int[] location = new int[2];
-        boolean upAtDeleteAppArea;
-        boolean upAtCreateShortcutArea;
-        RecyclerView.ViewHolder dragHolder;
+        int[] location = new int[2];    //获取位置信息（下面复用了几次）
+        boolean upAtDeleteAppArea;   //是否放到了删除区域
+        boolean upAtCreateShortcutArea; //是否放到了创建快捷方式区域
+        RecyclerView.ViewHolder dragHolder; //拖动view的holder
 
         LauncherTouchCallback() {
-            super(UP | DOWN | LEFT | RIGHT | START | END, 0);
+            super(UP | DOWN | LEFT | RIGHT | START | END, 0); //这里只对拖动做监控，滑动不管
         }
 
         @Override
         public int interpolateOutOfBoundsScroll(RecyclerView recyclerView, int viewSize, int viewSizeOutOfBounds, int totalSize, long msSinceStartScroll) {
-            return 0;
+            return 0;   //拖拽到屏幕边缘处理：0是不滑动？？？
         }
 
         @Override
@@ -369,6 +378,13 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             return super.getMovementFlags(recyclerView, viewHolder);
         }
 
+        /**
+         * 当滑动时，获得起始位置和终点位置，操作adapter完成动画
+         * @param recyclerView
+         * @param viewHolder
+         * @param target
+         * @return
+         */
         @Override
         public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
             int pos = viewHolder.getAdapterPosition();
@@ -380,13 +396,18 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         @Override
         public boolean isLongPressDragEnabled() {
             return true;
-        }
+        } //可长按
 
         @Override
         public boolean isItemViewSwipeEnabled() {
             return false;
-        }
+        }//不可滑动
 
+        /**
+         * 当拖动了某个item时(长按以拖动)，item变大，底部出现
+         * @param viewHolder
+         * @param actionState
+         */
         @Override
         public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
             if (viewHolder instanceof LaunchpadAdapter.ViewHolder) {
@@ -404,6 +425,13 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             super.onSelectedChanged(viewHolder, actionState);
         }
 
+        /**
+         * 是否能释放（效果？？？？）
+         * @param recyclerView
+         * @param current
+         * @param target
+         * @return
+         */
         @Override
         public boolean canDropOver(RecyclerView recyclerView, RecyclerView.ViewHolder current, RecyclerView.ViewHolder target) {
             if (upAtCreateShortcutArea || upAtDeleteAppArea) {
@@ -418,6 +446,11 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             return false;
         }
 
+        /**
+         * 当松手后，需要执行的逻辑，先变小，底部消失，根据标志判断是否需要删除或创建快捷方式
+         * @param recyclerView
+         * @param viewHolder
+         */
         @Override
         public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
             if (viewHolder instanceof LaunchpadAdapter.ViewHolder) {
@@ -445,22 +478,36 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
         }
 
+        /**
+         * 滑动时，该item的view的处理，拖动时是否需要删除（会绘制在recyclerView下方）
+         * onChildDrawOver 会绘制在recyclerView上方
+         * @param c
+         * @param recyclerView
+         * @param viewHolder
+         * @param dX
+         * @param dY
+         * @param actionState
+         * @param isCurrentlyActive
+         */
         @Override
         public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
-            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);//dx,dy是一次滑动的距离
             if (actionState != ACTION_STATE_DRAG || !isCurrentlyActive) {
                 return;
             }
-            View itemView = viewHolder.itemView;
-            itemView.getLocationInWindow(location);
-            int x = (int) (location[0] + dX);
-            int y = (int) (location[1] + dY);
 
-            mBottomArea.getLocationInWindow(location);
+            View itemView = viewHolder.itemView;
+            itemView.getLocationInWindow(location);     //获取item的左上角坐标
+            Log.e("aaa", "dx=" + location[0] + "  dy=" + location[1]);
+            int x = (int) (location[0] + dX);
+            int y = (int) (location[1] + dY);   //获取item左上角移动后的坐标
+
+            mBottomArea.getLocationInWindow(location);  //获取底部view的左上角坐标，得到分界线的位置即baseline
+
             int baseLine = location[1] - mBottomArea.getHeight();
             if (y >= baseLine) {
                 mDeleteAppBox.getLocationInWindow(location);
-                int deleteAppAreaStartX = location[0];
+                int deleteAppAreaStartX = location[0];      //获得底部view中间分割线的位置
                 if (x < deleteAppAreaStartX) {
                     upAtCreateShortcutArea = true;
                     upAtDeleteAppArea = false;

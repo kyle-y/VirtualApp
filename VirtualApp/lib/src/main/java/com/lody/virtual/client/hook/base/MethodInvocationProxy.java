@@ -28,8 +28,8 @@ public abstract class MethodInvocationProxy<T extends MethodInvocationStub> impl
 
     public MethodInvocationProxy(T invocationStub) {
         this.mInvocationStub = invocationStub;
-        onBindMethods();
-        afterHookApply(invocationStub);
+        onBindMethods();//通过反射注解得到要hook的方法（并覆写子类的这个方法，实现更多方式的方法hook）
+        afterHookApply(invocationStub);//hook之后的操作，保留实现
 
         LogInvocation loggingAnnotation = getClass().getAnnotation(LogInvocation.class);
         if (loggingAnnotation != null) {
@@ -54,7 +54,6 @@ public abstract class MethodInvocationProxy<T extends MethodInvocationStub> impl
                     addMethodProxy(innerClass);
                 }
             }
-
         }
     }
 
@@ -65,6 +64,7 @@ public abstract class MethodInvocationProxy<T extends MethodInvocationStub> impl
                 constructor.setAccessible(true);
             }
             MethodProxy methodProxy;
+            // 得到hook方法的实例，并保存起来
             if (constructor.getParameterTypes().length == 0) {
                 methodProxy = (MethodProxy) constructor.newInstance();
             } else {

@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author Lody
  */
-public interface IAppManager {
+public interface IAppManager {  //app安装卸载等管理接口类，定义了需要实现的功能
 
     int[] getPackageInstalledUsers(String packageName) throws RemoteException;
 

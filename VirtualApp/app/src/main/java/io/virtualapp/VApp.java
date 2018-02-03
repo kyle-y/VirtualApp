@@ -31,13 +31,15 @@ public class VApp extends MultiDexApplication {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
-        VASettings.ENABLE_IO_REDIRECT = true;
-        VASettings.ENABLE_INNER_SHORTCUT = false;
+        VASettings.ENABLE_IO_REDIRECT = true;//重定向文件路径
+        VASettings.ENABLE_INNER_SHORTCUT = false;//创建桌面快捷方式
         try {
-            VirtualCore.get().startup(base);
+            VirtualCore.get().startup(base);//初始化第一步
         } catch (Throwable e) {
             e.printStackTrace();
         }
+        //然后会执行contentprovider子类的oncreate
+        //然后执行oncreate()
     }
 
     @Override
@@ -48,9 +50,9 @@ public class VApp extends MultiDexApplication {
         virtualCore.initialize(new VirtualCore.VirtualInitializer() {
 
             @Override
-            public void onMainProcess() {
+            public void onMainProcess() {   //VirtualApp所在的主进程
                 Once.initialise(VApp.this);
-                new FlurryAgent.Builder()
+                new FlurryAgent.Builder()       //统计数据信息
                         .withLogEnabled(true)
                         .withListener(() -> {
                             // nothing
@@ -59,7 +61,7 @@ public class VApp extends MultiDexApplication {
             }
 
             @Override
-            public void onVirtualProcess() {
+            public void onVirtualProcess() {    //VAservice所在的进程,即:x进程
                 //listener components
                 virtualCore.setComponentDelegate(new MyComponentDelegate());
                 //fake phone imei,macAddress,BluetoothAddress
@@ -69,7 +71,7 @@ public class VApp extends MultiDexApplication {
             }
 
             @Override
-            public void onServerProcess() {
+            public void onServerProcess() {     //内置App所在的进程
                 virtualCore.setAppRequestListener(new MyAppRequestListener(VApp.this));
                 virtualCore.addVisibleOutsidePackage("com.tencent.mobileqq");
                 virtualCore.addVisibleOutsidePackage("com.tencent.mobileqqi");

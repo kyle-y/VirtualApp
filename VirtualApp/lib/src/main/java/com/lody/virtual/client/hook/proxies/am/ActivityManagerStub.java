@@ -40,7 +40,7 @@ import mirror.android.util.Singleton;
 @Inject(MethodProxies.class)
 public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationStub<IInterface>> {
 
-    public ActivityManagerStub() {
+    public ActivityManagerStub() {//反射系统ActivityManagerNative获得真正的AMS，并建立本地代理方法封装起来
         super(new MethodInvocationStub<>(ActivityManagerNative.getDefault.call()));
     }
 
@@ -49,8 +49,9 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
         if (BuildCompat.isOreo()) {
             //Android Oreo(8.X)
             Object singleton = ActivityManagerOreo.IActivityManagerSingleton.get();
-            Singleton.mInstance.set(singleton, getInvocationStub().getProxyInterface());
+            Singleton.mInstance.set(singleton, getInvocationStub().getProxyInterface());//8.0以上系统，通过IActivityManagerSingleton字段获得服务，故将其替换为代理
         } else {
+            //根据返回值的类型，处理设置代理
             if (ActivityManagerNative.gDefault.type() == IActivityManager.TYPE) {
                 ActivityManagerNative.gDefault.set(getInvocationStub().getProxyInterface());
             } else if (ActivityManagerNative.gDefault.type() == Singleton.TYPE) {
@@ -58,9 +59,11 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                 Singleton.mInstance.set(gDefault, getInvocationStub().getProxyInterface());
             }
         }
+        //baseInterface ----  系统远端service实现了IActivityManager或singleton，执行上面的操作后，getDefault被替换成了代理，baseInterface是真实的远端service
+        //获得完善的远程代理，包括代理类、远程binder、并包装了远程binder的实现供调用
         BinderInvocationStub hookAMBinder = new BinderInvocationStub(getInvocationStub().getBaseInterface());
-        hookAMBinder.copyMethodProxies(getInvocationStub());
-        ServiceManager.sCache.get().put(Context.ACTIVITY_SERVICE, hookAMBinder);
+        hookAMBinder.copyMethodProxies(getInvocationStub());//因为已经创建过了，直接复制过来
+        ServiceManager.sCache.get().put(Context.ACTIVITY_SERVICE, hookAMBinder);//通过反射放进系统的service map中，系统getService流程就会被截断，调用hookAMBinder
     }
 
     @Override
@@ -120,6 +123,7 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
 
     @Override
     public boolean isEnvBad() {
+        //如果inject成功,getDefault将被替换为代理，即二者会等同
         return ActivityManagerNative.getDefault.call() != getInvocationStub().getProxyInterface();
     }
 

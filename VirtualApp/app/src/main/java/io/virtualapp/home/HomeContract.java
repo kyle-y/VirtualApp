@@ -10,6 +10,9 @@ import io.virtualapp.home.models.AppInfoLite;
 
 /**
  * @author Lody
+ *
+ * view层和precenter层的抽象层，放在一个类里统一管理
+ * 默认的修饰符指定该类只能在home包内被访问
  */
 /* package */ class HomeContract {
 

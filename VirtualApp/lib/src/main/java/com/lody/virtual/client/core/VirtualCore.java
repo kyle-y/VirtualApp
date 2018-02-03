@@ -41,8 +41,8 @@ import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.ServiceCache;
+import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.interfaces.IUiCallback;
@@ -98,7 +98,7 @@ public final class VirtualCore {
     private VirtualCore() {
     }
 
-    public static VirtualCore get() {
+    public static VirtualCore get() {//获得单例
         return gCore;
     }
 
@@ -171,18 +171,18 @@ public final class VirtualCore {
     }
 
 
-    public void startup(Context context) throws Throwable {
+    public void startup(Context context) throws Throwable {//主进程调用
         if (!isStartUp) {
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
-            VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_DEF_AUTHORITY;
-            ServiceManagerNative.SERVICE_CP_AUTH = context.getPackageName() + "." + ServiceManagerNative.SERVICE_DEF_AUTH;
+            VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_DEF_AUTHORITY;//io.virtualapp.virtual_stub_
+            ServiceManagerNative.SERVICE_CP_AUTH = context.getPackageName() + "." + ServiceManagerNative.SERVICE_DEF_AUTH;//io.virtualapp.virtual.service.BinderProvider
             this.context = context;
-            mainThread = ActivityThread.currentActivityThread.call();
-            unHookPackageManager = context.getPackageManager();
-            hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
-            IPCBus.initialize(new IServerCache() {
+            mainThread = ActivityThread.currentActivityThread.call();//反射系统的ActivityThread并获得mainThread
+            unHookPackageManager = context.getPackageManager();//获得系统的PM
+            hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);//获取包含所有的contentProvider的packageInfo
+            IPCBus.initialize(new IServerCache() {//初始化serviceCase匿名类，并定义了加入和查询方法，所有远端service的注册和获得通过IPCBus管理
                 @Override
                 public void join(String serverName, IBinder binder) {
                     ServiceCache.addService(serverName, binder);
@@ -193,7 +193,7 @@ public final class VirtualCore {
                     return ServiceManagerNative.getService(serverName);
                 }
             });
-            detectProcessType();
+            detectProcessType();//判断进程
             InvocationStubManager invocationStubManager = InvocationStubManager.getInstance();
             invocationStubManager.init();
             invocationStubManager.injectAll();
@@ -261,7 +261,7 @@ public final class VirtualCore {
         } else {
             processType = ProcessType.CHILD;
         }
-        if (isVAppProcess()) {
+        if (isVAppProcess()) {//获得systemPid
             systemPid = VActivityManager.get().getSystemPid();
         }
     }

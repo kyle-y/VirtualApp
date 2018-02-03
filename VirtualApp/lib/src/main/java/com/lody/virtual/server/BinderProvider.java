@@ -48,7 +48,7 @@ public final class BinderProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         Context context = getContext();
-        DaemonService.startup(context);
+        DaemonService.startup(context);//守护:x进程，变为前台进程，提高优先级，不易被系统干掉
         if (!VirtualCore.get().isStartup()) {
             return true;
         }

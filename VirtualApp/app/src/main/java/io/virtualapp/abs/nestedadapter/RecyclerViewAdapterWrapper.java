@@ -3,6 +3,10 @@ package io.virtualapp.abs.nestedadapter;
 import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 
+/**
+ * 对recyclerViewAdapter的一层装饰
+ * 好处是，不影响原有逻辑的情况下，可以在这一层对adapter做一些特殊的处理,增强其功能
+ */
 public class RecyclerViewAdapterWrapper extends RecyclerView.Adapter {
 
     protected final RecyclerView.Adapter wrapped;

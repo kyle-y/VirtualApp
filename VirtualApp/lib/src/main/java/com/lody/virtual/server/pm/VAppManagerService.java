@@ -43,10 +43,10 @@ import dalvik.system.DexFile;
 /**
  * @author Lody
  */
-public class VAppManagerService implements IAppManager {
+public class VAppManagerService implements IAppManager {    //用来管理app的具体实现类
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
-    private static final AtomicReference<VAppManagerService> sService = new AtomicReference<>();
+    private static final AtomicReference<VAppManagerService> sService = new AtomicReference<>(); //包装为原子性引用
     private final UidSystem mUidSystem = new UidSystem();
     private final PackagePersistenceLayer mPersistenceLayer = new PackagePersistenceLayer(this);
     private final Set<String> mVisibleOutsidePackages = new HashSet<>();
@@ -59,10 +59,10 @@ public class VAppManagerService implements IAppManager {
     }
 
     public static void systemReady() {
-        VEnvironment.systemReady();
-        VAppManagerService instance = new VAppManagerService();
-        instance.mUidSystem.initUidList();
-        sService.set(instance);
+        VEnvironment.systemReady(); //获取文件权限，并根据静态代码块创建文件
+        VAppManagerService instance = new VAppManagerService();//创建实例
+        instance.mUidSystem.initUidList();//初始化uidList
+        sService.set(instance); //包装为原子性引用
     }
 
     public boolean isBooting() {

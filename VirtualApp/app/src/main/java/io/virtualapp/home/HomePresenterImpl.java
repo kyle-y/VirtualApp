@@ -41,8 +41,9 @@ class HomePresenterImpl implements HomeContract.HomePresenter {
     }
 
     @Override
-    public void start() {
+    public void start() {       //初始化
         dataChanged();
+        //以下操作只执行一次---见三方库：once
         if (!Once.beenDone(VCommends.TAG_SHOW_ADD_APP_GUIDE)) {
             mView.showGuide();
             Once.markDone(VCommends.TAG_SHOW_ADD_APP_GUIDE);

@@ -7,6 +7,9 @@ import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.View;
 import android.view.ViewGroup;
 
+/**
+ * 这种方式不太好，继承关系太强，应该直接继承RecyclerView.Adapter，将RecyclerView.Adapter的子类传进来，使用装饰模式
+ */
 public class SmartRecyclerAdapter extends RecyclerViewAdapterWrapper {
     public static final int TYPE_HEADER = -1;
     public static final int TYPE_FOOTER = -2;

@@ -23,7 +23,6 @@ import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.VParceledListSlice;
-import com.lody.virtual.server.IPackageInstaller;
 import com.lody.virtual.server.interfaces.IPackageManager;
 import com.lody.virtual.server.pm.installer.VPackageInstallerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
@@ -100,7 +99,7 @@ public class VPackageManagerService implements IPackageManager {
         mResolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
     }
 
-    public static void systemReady() {
+    public static void systemReady() {//创建VPMS实例，并将其设置为原子性引用
         VPackageManagerService instance = new VPackageManagerService();
         new VUserManagerService(VirtualCore.get().getContext(), instance, new char[0], instance.mPackages);
         gService.set(instance);

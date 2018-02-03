@@ -107,6 +107,10 @@ public final class InvocationStubManager {
 
 	}
 
+	/**
+	 * 根据进程创建各种不同的代理类，这些类都已经封装好了hook方法，随着inject()的调用，会被hook掉
+	 * @throws Throwable
+	 */
 	private void injectInternal() throws Throwable {
 		if (VirtualCore.get().isMainProcess()) {
 			return;

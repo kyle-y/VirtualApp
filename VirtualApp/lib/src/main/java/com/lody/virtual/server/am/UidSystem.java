@@ -25,11 +25,12 @@ public class UidSystem {
     private static final String TAG = UidSystem.class.getSimpleName();
 
     private final HashMap<String, Integer> mSharedUserIdMap = new HashMap<>();
-    private int mFreeUid = FIRST_APPLICATION_UID;
+    private int mFreeUid = FIRST_APPLICATION_UID;//10000自由uid，用来给没有UID的临时添加
 
 
     public void initUidList() {
         mSharedUserIdMap.clear();
+        //从uid_list.ini文件或uid_list.ini.bak中获得mFreeUid和mSharedUserIdMap
         File uidFile = VEnvironment.getUidListFile();
         if (!loadUidList(uidFile)) {
             File bakUidFile = VEnvironment.getBakUidListFile();
@@ -58,17 +59,17 @@ public class UidSystem {
         File uidFile = VEnvironment.getUidListFile();
         File bakUidFile = VEnvironment.getBakUidListFile();
         if (uidFile.exists()) {
-            if (bakUidFile.exists() && !bakUidFile.delete()) {
+            if (bakUidFile.exists() && !bakUidFile.delete()) {//删除备份文件
                 VLog.w(TAG, "Warning: Unable to delete the expired file --\n " + bakUidFile.getPath());
             }
             try {
-                FileUtils.copyFile(uidFile, bakUidFile);
+                FileUtils.copyFile(uidFile, bakUidFile);//重新备份一份
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         try {
-            ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(uidFile));
+            ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(uidFile));//将freeUid和shareUIDmap存进来
             os.writeInt(mFreeUid);
             os.writeObject(mSharedUserIdMap);
             os.close();
@@ -77,17 +78,17 @@ public class UidSystem {
         }
     }
 
-    public int getOrCreateUid(VPackage pkg) {
+    public int getOrCreateUid(VPackage pkg) {  //获取或创建uid
         String sharedUserId = pkg.mSharedUserId;
         if (sharedUserId == null) {
             sharedUserId = pkg.packageName;
         }
-        Integer uid = mSharedUserIdMap.get(sharedUserId);
+        Integer uid = mSharedUserIdMap.get(sharedUserId);//根据shareUid获得uid
         if (uid != null) {
             return uid;
         }
-        int newUid = ++mFreeUid;
-        mSharedUserIdMap.put(sharedUserId, newUid);
+        int newUid = ++mFreeUid;//获取不到的话，创建一个新的uid
+        mSharedUserIdMap.put(sharedUserId, newUid);//放进集合里
         save();
         return newUid;
     }
